@@ -1,20 +1,18 @@
 import fs from "fs";
-import chalk from "chalk";
-import "dotenv/config";
-import { type } from "os";
 
-const warn = chalk.yellowBright.bold,
-  success = chalk.greenBright.bold,
-  dbName = process.env.DB_FILE_NAME;
+import chalk from "chalk";
+
+const warn = chalk.yellowBright.bold;
+const success = chalk.greenBright.bold;
 
 export default class DB {
   static createDB() {
-    if (fs.existsSync(dbName)) {
+    if (fs.existsSync(process.env.DB_FILE_NAME)) {
       console.log(warn("File exists !"));
       return false;
     }
     try {
-      fs.writeFileSync(dbName, "[]", "utf-8");
+      fs.writeFileSync(process.env.DB_FILE_NAME, "[]", "utf-8");
       console.log(success("File created successfully ..."));
       return true;
     } catch (error) {
@@ -24,8 +22,7 @@ export default class DB {
 
   static resetDB() {
     try {
-      fs.writeFileSync(dbName, "[]", "utf-8");
-      console.log(success("Database file reseted"));
+      fs.writeFileSync(process.env.DB_FILE_NAME, "[]", "utf-8");
       return true;
     } catch (e) {
       throw new Error("Database file not reseted!");
@@ -33,7 +30,7 @@ export default class DB {
   }
 
   static DBExists() {
-    if (fs.existsSync(dbName)) {
+    if (fs.existsSync(process.env.DB_FILE_NAME)) {
       return true;
     } else {
       return false;
@@ -43,7 +40,7 @@ export default class DB {
   static getById(id) {
     let data;
     if (DB.DBExists()) {
-      data = fs.readFileSync(dbName, "utf-8");
+      data = fs.readFileSync(process.env.DB_FILE_NAME, "utf-8");
       data = JSON.parse(data);
     } else {
       try {
@@ -64,7 +61,7 @@ export default class DB {
   static getByTitle(title) {
     let data;
     if (DB.DBExists()) {
-      data = fs.readFileSync(dbName, "utf-8");
+      data = fs.readFileSync(process.env.DB_FILE_NAME, "utf-8");
       data = JSON.parse(data);
     } else {
       try {
@@ -85,7 +82,7 @@ export default class DB {
   static getAll() {
     let data;
     if (DB.DBExists()) {
-      data = fs.readFileSync(dbName, "utf-8");
+      data = fs.readFileSync(process.env.DB_FILE_NAME, "utf-8");
       data = JSON.parse(data);
     } else {
       try {
@@ -95,11 +92,7 @@ export default class DB {
         console.log(e.message);
       }
     }
-    try {
-      return data;
-    } catch (e) {
-      throw new Error("sintax error \n please check your DB file");
-    }
+    return data;
   }
 
   static createTask(title, completed = false) {
@@ -110,7 +103,7 @@ export default class DB {
     }
     let data;
     if (DB.DBExists()) {
-      data = fs.readFileSync(dbName, "utf-8");
+      data = fs.readFileSync(process.env.DB_FILE_NAME, "utf-8");
       data = JSON.parse(data);
     } else {
       try {
@@ -123,15 +116,17 @@ export default class DB {
     const checkTitle = DB.getByTitle(title);
     if (checkTitle) throw new Error("please send a new title");
     try {
-      if (typeof data !== "a") {
-      }
       const task = {
-        id: data.length + 1,
+        id: data[data.length - 1].id + 1,
         title,
         completed,
       };
       data.push(task);
-      fs.writeFileSync(dbName, JSON.stringify(data, null, "    "), "utf-8");
+      fs.writeFileSync(
+        process.env.DB_FILE_NAME,
+        JSON.stringify(data, null, "    "),
+        "utf-8"
+      );
       return task;
     } catch (e) {
       throw new Error("sintax error \n please check your DB file");
@@ -144,7 +139,7 @@ export default class DB {
     }
     let data;
     if (DB.DBExists()) {
-      data = fs.readFileSync(dbName, "utf-8");
+      data = fs.readFileSync(process.env.DB_FILE_NAME, "utf-8");
       data = JSON.parse(data);
     } else {
       try {
@@ -160,7 +155,11 @@ export default class DB {
         console.log(warn(`defult completed is ${completed} !`));
       } else {
         task.completed = completed;
-        fs.writeFileSync(dbName, JSON.stringify(data, null, "    "), "utf-8");
+        fs.writeFileSync(
+          process.env.DB_FILE_NAME,
+          JSON.stringify(data, null, "    "),
+          "utf-8"
+        );
         return task;
       }
     } catch (e) {
@@ -176,7 +175,7 @@ export default class DB {
     }
     let data;
     if (DB.DBExists()) {
-      data = fs.readFileSync(dbName, "utf-8");
+      data = fs.readFileSync(process.env.DB_FILE_NAME, "utf-8");
       data = JSON.parse(data);
     } else {
       try {
@@ -187,7 +186,8 @@ export default class DB {
       }
     }
     const checkTitle = DB.getByTitle(title);
-    if (checkTitle) throw new Error("please send a new title");
+    if (checkTitle && checkTitle.id !== id)
+      throw new Error("please send a new title");
     try {
       if (id > data.length) {
         throw new Error("task not found !");
@@ -195,7 +195,11 @@ export default class DB {
       const task = data.find((item) => item.id === id);
       task.title = title;
       task.completed = completed;
-      fs.writeFileSync(dbName, JSON.stringify(data, null, "    "), "utf-8");
+      fs.writeFileSync(
+        process.env.DB_FILE_NAME,
+        JSON.stringify(data, null, "    "),
+        "utf-8"
+      );
       return task;
     } catch (e) {
       throw new Error("sintax error \n please check your DB file");
@@ -206,7 +210,7 @@ export default class DB {
     if (!id) throw new Error("please send a id for delete task !");
     let data;
     if (DB.DBExists()) {
-      data = fs.readFileSync(dbName, "utf-8");
+      data = fs.readFileSync(process.env.DB_FILE_NAME, "utf-8");
       data = JSON.parse(data);
     } else {
       try {
@@ -220,10 +224,16 @@ export default class DB {
       if (data[i].id === id) {
         data.splice(i, 1);
         try {
-          fs.writeFileSync(dbName, JSON.stringify(data, null, "    "), "utf-8");
+          fs.writeFileSync(
+            process.env.DB_FILE_NAME,
+            JSON.stringify(data, null, "    "),
+            "utf-8"
+          );
           return true;
         } catch (error) {
-          throw new Error("sintax error \n can't write to db " + dbName);
+          throw new Error(
+            "sintax error \n can't write to db " + process.env.DB_FILE_NAME
+          );
         }
       }
     }
@@ -233,7 +243,7 @@ export default class DB {
     if (!title) throw new Error("please send a title for delete tsask");
     let data;
     if (DB.DBExists()) {
-      data = fs.readFileSync(dbName, "utf-8");
+      data = fs.readFileSync(process.env.DB_FILE_NAME, "utf-8");
       data = JSON.parse(data);
     } else {
       try {
@@ -243,14 +253,20 @@ export default class DB {
         throw new Error(e.message);
       }
     }
-    for(let i = 0; i < data.length; i++) {
-      if(data[i].title === title){
+    for (let i = 0; i < data.length; i++) {
+      if (data[i].title === title) {
         data.splice(i, 1);
         try {
-          fs.writeFileSync(dbName, JSON.stringify(data, null, "    "), "utf-8");
+          fs.writeFileSync(
+            process.env.DB_FILE_NAME,
+            JSON.stringify(data, null, "    "),
+            "utf-8"
+          );
           return true;
         } catch (error) {
-          throw new Error("sintax error \n can't write to db " + dbName);
+          throw new Error(
+            "sintax error \n can't write to db " + process.env.DB_FILE_NAME
+          );
         }
       }
     }
